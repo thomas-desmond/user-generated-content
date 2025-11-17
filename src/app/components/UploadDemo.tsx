@@ -195,14 +195,19 @@ export function UploadDemo() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
       {/* Left Side - Upload Interface */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-        <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-6">
-          Upload Image
-        </h2>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-orange-100/50 dark:border-gray-700 p-6">
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="w-8 h-8 bg-gradient-to-r from-[#F6821F] to-[#FF6633] rounded-lg flex items-center justify-center">
+            <Upload className="w-5 h-5 text-white" />
+          </div>
+          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
+            Secure File Upload
+          </h2>
+        </div>
         
         <div className="space-y-6">
           {/* File Selection */}
-          <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
+          <div className="border-2 border-dashed border-orange-100/80 dark:border-gray-600 rounded-xl p-8 text-center hover:border-orange-200 dark:hover:border-[#F6821F] transition-colors bg-orange-50/10 dark:bg-gray-700/20">
             <input
               type="file"
               accept="image/*"
@@ -247,7 +252,7 @@ export function UploadDemo() {
           <button
             onClick={handleUpload}
             disabled={!selectedFile || isUploading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
+            className="w-full bg-gradient-to-r from-[#F6821F] to-[#FF6633] hover:from-[#FF6633] hover:to-[#F6821F] disabled:from-gray-400 disabled:to-gray-400 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl disabled:shadow-none"
           >
             {isUploading ? (
               <>
@@ -264,7 +269,7 @@ export function UploadDemo() {
 
           {/* Success Message */}
           {uploadedFileUrl && (
-            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+            <div className="bg-gradient-to-r from-green-50/60 to-emerald-50/60 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-100 dark:border-green-800 rounded-xl p-4 shadow-sm">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <CircleCheck  className="w-5 h-5 text-green-500" />
@@ -275,7 +280,7 @@ export function UploadDemo() {
                 <button
                   onClick={handleDownload}
                   disabled={isDownloading}
-                  className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center space-x-2 text-sm"
+                  className="bg-gradient-to-r from-[#F6821F] to-[#FF6633] hover:from-[#FF6633] hover:to-[#F6821F] disabled:from-gray-400 disabled:to-gray-400 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 flex items-center space-x-2 text-sm shadow-md hover:shadow-lg disabled:shadow-none"
                 >
                   {isDownloading ? (
                     <>
@@ -298,7 +303,7 @@ export function UploadDemo() {
 
           {/* Display Downloaded Image */}
           {displayImageUrl && (
-            <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+            <div className="border border-gray-100 dark:border-gray-600 rounded-xl p-4 bg-white dark:bg-gray-700/20 shadow-sm">
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">
                 Image Retrieved from R2
               </h3>
@@ -322,13 +327,13 @@ export function UploadDemo() {
       </div>
 
       {/* Right Side - Process Explanation */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-orange-50 dark:border-gray-700 p-6">
         {!selectedFile && (
-          <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <p className="text-blue-800 dark:text-blue-200 text-sm">
-              <strong>Ready to demo:</strong> Choose an image on the left to see
-              the complete workflow in action. Each phase will show detailed
-              steps and architecture diagrams as the process unfolds.
+          <div className="mb-6 p-4 bg-gradient-to-r from-orange-50/20 to-red-50/20 dark:from-orange-900/20 dark:to-red-900/20 border border-orange-100/60 dark:border-[#F6821F]/50 rounded-lg">
+            <p className="text-[#F6821F] dark:text-orange-200 text-sm leading-relaxed">
+              <strong>Interactive Demo:</strong> Upload an image to see the complete secure workflow in action. 
+              This infrastructure pattern scales from individual uploads to enterprise-level content management, 
+              supporting everything from user photos to AI-generated media with zero egress fees.
             </p>
           </div>
         )}
