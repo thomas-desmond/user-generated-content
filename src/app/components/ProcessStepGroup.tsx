@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, CheckCircle, AlertCircle, Loader2, FileText } from 'lucide-react';
+import { ChevronDown, ChevronRight, CheckCircle, AlertCircle, Loader2, FileText, Maximize2 } from 'lucide-react';
 import { ArchitectureDiagram } from './ArchitectureDiagram';
+import { ArchitectureModal } from './ArchitectureModal';
 
 export interface UploadStep {
   id: string;
@@ -28,16 +29,13 @@ export interface StepGroup {
 interface ProcessStepGroupProps {
   group: StepGroup;
   onToggleCollapse: (groupId: string) => void;
-  showArchitecture: boolean;
-  onToggleArchitecture: () => void;
 }
 
 export function ProcessStepGroup({ 
   group, 
-  onToggleCollapse, 
-  showArchitecture, 
-  onToggleArchitecture 
+  onToggleCollapse
 }: ProcessStepGroupProps) {
+  const [showModal, setShowModal] = useState(false);
   const getStepIcon = (step: UploadStep) => {
     switch (step.status) {
       case 'completed':
@@ -112,11 +110,13 @@ export function ProcessStepGroup({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onToggleArchitecture();
+                setShowModal(true);
               }}
-              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center space-x-1"
+              title="View architecture diagram"
             >
-              {showArchitecture ? 'Hide' : 'Show'} Architecture
+              <span>View Architecture</span>
+              <Maximize2 className="w-4 h-4" />
             </button>
           )}
         </div>
@@ -125,17 +125,6 @@ export function ProcessStepGroup({
       {/* Group Content */}
       {!group.isCollapsed && (
         <div className="px-4 pb-4">
-          {/* Architecture Diagram */}
-          {showArchitecture && group.architectureDiagram && (
-            <div className="mb-4">
-              <ArchitectureDiagram 
-                title={group.architectureDiagram.title}
-                imagePath={group.architectureDiagram.imagePath}
-                fallbackText={group.architectureDiagram.fallbackText}
-              />
-            </div>
-          )}
-
           {/* Steps */}
           <div className="space-y-3 ml-8">
             {group.steps.map((step) => (
@@ -162,6 +151,17 @@ export function ProcessStepGroup({
             ))}
           </div>
         </div>
+      )}
+      
+      {/* Architecture Modal */}
+      {group.architectureDiagram && (
+        <ArchitectureModal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          title={group.architectureDiagram.title}
+          imagePath={group.architectureDiagram.imagePath}
+          fallbackText={group.architectureDiagram.fallbackText}
+        />
       )}
     </div>
   );

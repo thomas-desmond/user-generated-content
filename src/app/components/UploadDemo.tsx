@@ -13,7 +13,6 @@ export function UploadDemo() {
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [displayImageUrl, setDisplayImageUrl] = useState<string | null>(null);
-  const [activeArchitectureGroup, setActiveArchitectureGroup] = useState<string | null>(null);
 
   const updateStepStatus = useCallback((stepId: string, status: UploadStep['status']) => {
     setStepGroups(prev => prev.map(group => ({
@@ -30,9 +29,6 @@ export function UploadDemo() {
     ));
   }, []);
 
-  const toggleArchitecture = useCallback((groupId: string) => {
-    setActiveArchitectureGroup(prev => prev === groupId ? null : groupId);
-  }, []);
 
   const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -304,7 +300,7 @@ export function UploadDemo() {
           {displayImageUrl && (
             <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">
-                Uploaded Image Preview
+                Image Retrieved from R2
               </h3>
               <div className="flex justify-center">
                 <img
@@ -346,8 +342,6 @@ export function UploadDemo() {
               key={group.id}
               group={group}
               onToggleCollapse={toggleGroupCollapse}
-              showArchitecture={activeArchitectureGroup === group.id}
-              onToggleArchitecture={() => toggleArchitecture(group.id)}
             />
           ))}
         </div>

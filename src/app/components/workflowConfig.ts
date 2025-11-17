@@ -9,7 +9,7 @@ export const defaultStepGroups: StepGroup[] = [
     status: 'pending',
     architectureDiagram: {
       title: 'R2 Upload Architecture',
-      // imagePath: '/diagrams/r2-upload-flow.png', // Will be added later
+      imagePath: '/secure-user-uploads.png',
       fallbackText: [
         '• Next.js App → API Route (/api/upload)',
         '• API Route → Cloudflare R2 (AWS SDK)',
