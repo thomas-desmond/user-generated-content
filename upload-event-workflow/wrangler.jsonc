@@ -1,0 +1,53 @@
+// <docs-tag name="workflows-wrangler.json">
+//$schema: "node_modules/wrangler/config-schema.json"
+/**
+ * For more details on how to configure Wrangler, refer to:
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "upload-event-workflow",
+	"main": "src/index.ts",
+	"compatibility_date": "2024-10-22",
+	"observability": {
+		"enabled": true
+	},
+	"queues": {
+		"consumers": [
+			{
+				"queue": "upload-event-queue"
+			}
+		]
+	},
+	"workflows": [
+		{
+			// name of your workflow
+			"name": "workflows-starter",
+			// binding name env.MYWORKFLOW
+			"binding": "MY_WORKFLOW",
+			// this is class that extends the Workflow class in src/index.ts
+			"class_name": "MyWorkflow"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "R2_BUCKET",
+			"bucket_name": "user-generated-content-demo"
+		}
+	],
+	"ai": {
+		"binding": "AI"
+	},
+	"kv_namespaces": [
+		{
+			"binding": "AI_ANALYSIS_KV",
+			"id": "65c52f1b25574886851f3ccc56f7aae6"
+		},
+		{
+			"binding": "WORKFLOW_STATUS",
+			"id": "dda6f36e73784778880a7e8b70db22b6"
+		}
+	]
+	// </docs-tag name="workflows-binding-wrangler.json">
+}
+// </docs-tag name="workflows-wrangler.json">
