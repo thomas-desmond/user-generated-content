@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { AwsClient } from 'aws4fetch';
 
 // Type definition for the request body
 interface UploadRequest {
@@ -8,14 +7,12 @@ interface UploadRequest {
   fileType: string;
 }
 
-// Initialize S3 client for R2
-const s3Client = new S3Client({
+// Initialize AWS client for R2
+const aws = new AwsClient({
+  accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+  secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
   region: 'auto',
-  endpoint: process.env.R2_ENDPOINT,
-  credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
-  }
+  service: 's3',
 });
 
 export async function POST(request: NextRequest) {
@@ -38,23 +35,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate unique file name with timestamp
-    const timestamp = Date.now();
-    const uniqueFileName = `${timestamp}-${fileName}`;
+    // Create the URL for the R2 object
+    const objectUrl = new URL(`https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${process.env.R2_BUCKET_NAME}/${fileName}`);
 
-    // Create the command for putting an object
-    const command = new PutObjectCommand({
-      Bucket: process.env.R2_BUCKET_NAME!,
-      Key: uniqueFileName,
-      ContentType: fileType,
+    console.log('Object URL:', objectUrl.toString());
+
+    // Generate pre-signed URL for PUT operation (expires in 10 minutes)
+    const signedUrl = await aws.sign(objectUrl, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': fileType,
+      },
+      aws: {
+        signQuery: true,
+      },
     });
 
-    // Generate pre-signed URL (expires in 10 minutes)
-    const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 600 });
-
     return NextResponse.json({
-      signedUrl,
-      fileName: uniqueFileName,
+      signedUrl: signedUrl.url.toString(),
+      fileName: fileName,
       bucketName: process.env.R2_BUCKET_NAME,
     });
   } catch (error) {

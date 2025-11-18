@@ -1,9 +1,19 @@
-'use client';
+"use client";
 
-import { useState, useCallback } from 'react';
-import { Upload, Loader2, Image as ImageIcon, CircleCheck, Download } from 'lucide-react';
-import { ProcessStepGroup, type StepGroup, type UploadStep } from './ProcessStepGroup';
-import { defaultStepGroups } from './workflowConfig';
+import { useState, useCallback } from "react";
+import {
+  Upload,
+  Loader2,
+  Image as ImageIcon,
+  CircleCheck,
+  Download,
+} from "lucide-react";
+import {
+  ProcessStepGroup,
+  type StepGroup,
+  type UploadStep,
+} from "./ProcessStepGroup";
+import { defaultStepGroups } from "./workflowConfig";
 
 export function UploadDemo() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -14,52 +24,65 @@ export function UploadDemo() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [displayImageUrl, setDisplayImageUrl] = useState<string | null>(null);
 
-  const updateStepStatus = useCallback((stepId: string, status: UploadStep['status']) => {
-    setStepGroups(prev => prev.map(group => ({
-      ...group,
-      steps: group.steps.map(step => 
-        step.id === stepId ? { ...step, status } : step
-      )
-    })));
-  }, []);
+  const updateStepStatus = useCallback(
+    (stepId: string, status: UploadStep["status"]) => {
+      setStepGroups((prev) =>
+        prev.map((group) => ({
+          ...group,
+          steps: group.steps.map((step) =>
+            step.id === stepId ? { ...step, status } : step
+          ),
+        }))
+      );
+    },
+    []
+  );
 
   const toggleGroupCollapse = useCallback((groupId: string) => {
-    setStepGroups(prev => prev.map(group => 
-      group.id === groupId ? { ...group, isCollapsed: !group.isCollapsed } : group
-    ));
+    setStepGroups((prev) =>
+      prev.map((group) =>
+        group.id === groupId
+          ? { ...group, isCollapsed: !group.isCollapsed }
+          : group
+      )
+    );
   }, []);
 
-
-  const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      setSelectedFile(file);
-      updateStepStatus('select', 'completed');
-      // Reset other steps
-      ['presign', 'upload', 'complete', 'download'].forEach(id => updateStepStatus(id, 'pending'));
-      setUploadedFileUrl(null);
-      setUploadedFileName(null);
-      // Clean up previous image URL
-      if (displayImageUrl) {
-        URL.revokeObjectURL(displayImageUrl);
-        setDisplayImageUrl(null);
+  const handleFileSelect = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (file && file.type.startsWith("image/")) {
+        setSelectedFile(file);
+        updateStepStatus("select", "completed");
+        // Reset other steps
+        ["presign", "upload", "complete", "download"].forEach((id) =>
+          updateStepStatus(id, "pending")
+        );
+        setUploadedFileUrl(null);
+        setUploadedFileName(null);
+        // Clean up previous image URL
+        if (displayImageUrl) {
+          URL.revokeObjectURL(displayImageUrl);
+          setDisplayImageUrl(null);
+        }
       }
-    }
-  }, [updateStepStatus]);
+    },
+    [updateStepStatus]
+  );
 
   const handleUpload = useCallback(async () => {
     if (!selectedFile) return;
 
     setIsUploading(true);
-    
+
     try {
       // Step 1: Generate pre-signed URL
-      updateStepStatus('presign', 'active');
-      
-      const response = await fetch('/api/upload', {
-        method: 'POST',
+      updateStepStatus("presign", "active");
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           fileName: selectedFile.name,
@@ -68,100 +91,68 @@ export function UploadDemo() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get pre-signed URL');
+        throw new Error("Failed to get pre-signed URL");
       }
 
-      const { signedUrl, fileName } = await response.json();
-      updateStepStatus('presign', 'completed');
+      const { signedUrl, fileName } = (await response.json()) as {
+        signedUrl: string;
+        fileName: string;
+      };
+      updateStepStatus("presign", "completed");
 
       // Step 2: Upload to R2
-      updateStepStatus('upload', 'active');
-      
+      updateStepStatus("upload", "active");
+
+      console.log("Uploading file:", selectedFile.name);
+      console.log("Signed URL:", signedUrl);
+
       const uploadResponse = await fetch(signedUrl, {
-        method: 'PUT',
+        method: "PUT",
         body: selectedFile,
         headers: {
-          'Content-Type': selectedFile.type,
+          "Content-Type": selectedFile.type,
         },
       });
 
       if (!uploadResponse.ok) {
-        throw new Error('Failed to upload file');
+        throw new Error("Failed to upload file");
       }
 
-      updateStepStatus('upload', 'completed');
-      updateStepStatus('complete', 'completed');
-      updateStepStatus('download', 'completed');
-      
+      updateStepStatus("upload", "completed");
+      updateStepStatus("complete", "completed");
+      updateStepStatus("download", "completed");
+
       // Store the uploaded file information
       setUploadedFileName(fileName);
       // Generate the public URL (this would be your R2 public URL or custom domain)
-      const publicUrl = `https://pub-${process.env.NEXT_PUBLIC_R2_ACCOUNT_ID || 'demo'}.r2.dev/${fileName}`;
+      const publicUrl = `https://pub-${
+        process.env.NEXT_PUBLIC_R2_ACCOUNT_ID || "demo"
+      }.r2.dev/${fileName}`;
       setUploadedFileUrl(publicUrl);
-      
+
       // Auto-fetch and display the image
       await fetchAndDisplayImage(fileName);
-
     } catch (error) {
-      console.error('Upload failed:', error);
+      console.error("Upload failed:", error);
       // Find the active step in any group
       const activeStep = stepGroups
-        .flatMap(group => group.steps)
-        .find(step => step.status === 'active');
+        .flatMap((group) => group.steps)
+        .find((step) => step.status === "active");
       if (activeStep) {
-        updateStepStatus(activeStep.id, 'error');
+        updateStepStatus(activeStep.id, "error");
       }
     } finally {
       setIsUploading(false);
     }
   }, [selectedFile, stepGroups, updateStepStatus]);
 
-  const handleDownload = useCallback(async () => {
-    if (!uploadedFileName) return;
-
-    setIsDownloading(true);
-    
-    try {
-      // Get pre-signed download URL
-      const response = await fetch('/api/download', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fileName: uploadedFileName,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to get download URL');
-      }
-
-      const { downloadUrl } = await response.json();
-      
-      // Create a temporary link and trigger download
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = uploadedFileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-    } catch (error) {
-      console.error('Download failed:', error);
-      alert('Failed to download file. Please try again.');
-    } finally {
-      setIsDownloading(false);
-    }
-  }, [uploadedFileName]);
-
   const fetchAndDisplayImage = useCallback(async (fileName: string) => {
     try {
       // Get pre-signed download URL
-      const response = await fetch('/api/download', {
-        method: 'POST',
+      const response = await fetch("/api/download", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           fileName: fileName,
@@ -169,28 +160,28 @@ export function UploadDemo() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get download URL');
+        throw new Error("Failed to get download URL");
       }
 
-      const { downloadUrl } = await response.json();
-      
+      const { downloadUrl } = (await response.json()) as {
+        downloadUrl: string;
+      };
+
       // Fetch the actual image data
       const imageResponse = await fetch(downloadUrl);
       if (!imageResponse.ok) {
-        throw new Error('Failed to fetch image');
+        throw new Error("Failed to fetch image");
       }
-      
+
       // Create blob URL for display
       const blob = await imageResponse.blob();
       const blobUrl = URL.createObjectURL(blob);
       setDisplayImageUrl(blobUrl);
-
     } catch (error) {
-      console.error('Failed to fetch and display image:', error);
+      console.error("Failed to fetch and display image:", error);
       // Don't show error to user for auto-display, just log it
     }
   }, []);
-
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
@@ -204,7 +195,7 @@ export function UploadDemo() {
             Secure File Upload
           </h2>
         </div>
-        
+
         <div className="space-y-6">
           {/* File Selection */}
           <div className="border-2 border-dashed border-orange-100/80 dark:border-gray-600 rounded-xl p-8 text-center hover:border-orange-200 dark:hover:border-[#F6821F] transition-colors bg-orange-50/10 dark:bg-gray-700/20">
@@ -272,32 +263,12 @@ export function UploadDemo() {
             <div className="bg-gradient-to-r from-green-50/60 to-emerald-50/60 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-100 dark:border-green-800 rounded-xl p-4 shadow-sm">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <CircleCheck  className="w-5 h-5 text-green-500" />
+                  <CircleCheck className="w-5 h-5 text-green-500" />
                   <span className="text-green-800 dark:text-green-200 font-medium">
                     Upload successful!
                   </span>
                 </div>
-                <button
-                  onClick={handleDownload}
-                  disabled={isDownloading}
-                  className="bg-gradient-to-r from-[#F6821F] to-[#FF6633] hover:from-[#FF6633] hover:to-[#F6821F] disabled:from-gray-400 disabled:to-gray-400 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 flex items-center space-x-2 text-sm shadow-md hover:shadow-lg disabled:shadow-none"
-                >
-                  {isDownloading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Downloading...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Download className="w-4 h-4" />
-                      <span>Download</span>
-                    </>
-                  )}
-                </button>
               </div>
-              <p className="text-sm text-green-600 dark:text-green-300 mt-2">
-                File uploaded to: {uploadedFileUrl}
-              </p>
             </div>
           )}
 
@@ -313,7 +284,7 @@ export function UploadDemo() {
                   alt="Uploaded image preview"
                   className="max-w-full max-h-96 rounded-lg shadow-md object-contain"
                   onError={() => {
-                    console.error('Failed to load image preview');
+                    console.error("Failed to load image preview");
                     if (displayImageUrl) {
                       URL.revokeObjectURL(displayImageUrl);
                     }
@@ -331,9 +302,11 @@ export function UploadDemo() {
         {!selectedFile && (
           <div className="mb-6 p-4 bg-gradient-to-r from-orange-50/20 to-red-50/20 dark:from-orange-900/20 dark:to-red-900/20 border border-orange-100/60 dark:border-[#F6821F]/50 rounded-lg">
             <p className="text-[#F6821F] dark:text-orange-200 text-sm leading-relaxed">
-              <strong>Interactive Demo:</strong> Upload an image to see the complete secure workflow in action. 
-              This infrastructure pattern scales from individual uploads to enterprise-level content management, 
-              supporting everything from user photos to AI-generated media with zero egress fees.
+              <strong>Interactive Demo:</strong> Upload an image to see the
+              complete secure workflow in action. This infrastructure pattern
+              scales from individual uploads to enterprise-level content
+              management, supporting everything from user photos to AI-generated
+              media with zero egress fees.
             </p>
           </div>
         )}

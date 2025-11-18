@@ -194,7 +194,7 @@ export function UGCContext() {
           <div className="bg-gradient-to-r from-orange-50/20 to-red-50/20 dark:from-orange-900/20 dark:to-red-900/20 border border-orange-100/50 dark:border-[#FF6633]/50 rounded-lg p-4">
             <h4 className="font-semibold text-[#FF6633] dark:text-orange-100 mb-2">Infrastructure Flexibility:</h4>
             <p className="text-[#FF6633] dark:text-orange-200 text-sm">
-              This demonstration showcases R2's secure upload pattern using pre-signed URLs. The same 
+              This demonstration showcases R2&apos;s secure upload pattern using pre-signed URLs. The same 
               infrastructure seamlessly supports content creation tools, AI-generated media, and collaborative 
               platforms - providing a unified foundation for all user-generated content workflows.
             </p>
@@ -216,7 +216,7 @@ export function UGCContext() {
           </h2>
         </div>
         <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-          Explore how modern applications handle user-created content at scale with Cloudflare's 
+          Explore how modern applications handle user-created content at scale with Cloudflare&apos;s 
           cost-efficient, high-performance infrastructure solutions.
         </p>
       </div>

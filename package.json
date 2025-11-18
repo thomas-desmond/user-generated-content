@@ -13,14 +13,13 @@
 		"cf-typegen": "wrangler types --env-interface CloudflareEnv ./cloudflare-env.d.ts"
 	},
 	"dependencies": {
-		"@aws-sdk/client-s3": "^3.654.0",
-		"@aws-sdk/s3-request-presigner": "^3.654.0",
 		"@opennextjs/cloudflare": "^1.11.0",
+		"aws4fetch": "^1.0.19",
 		"lucide-react": "^0.445.0",
 		"next": "15.5.6",
 		"react": "19.1.0",
 		"react-dom": "19.1.0"
-	},
+	}, 
 	"devDependencies": {
 		"@eslint/eslintrc": "^3",
 		"@tailwindcss/postcss": "^4",

@@ -17,7 +17,17 @@
 	},
 	"observability": {
 		"enabled": true
-	}
+	},
+	/**
+	 * R2 Bucket Bindings
+	 * https://developers.cloudflare.com/r2/api/workers/workers-api-usage/
+	 */
+	"r2_buckets": [
+		{
+			"binding": "R2_BUCKET",
+			"bucket_name": "user-generated-content-demo"
+		}
+	]
 	/**
 	 * Smart Placement
 	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
