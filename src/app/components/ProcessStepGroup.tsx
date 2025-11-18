@@ -80,10 +80,10 @@ export function ProcessStepGroup({
   };
 
   return (
-    <div className="border border-gray-200 dark:border-gray-600 rounded-lg mb-4">
+    <div className="border border-gray-200 rounded-lg mb-4">
       {/* Group Header */}
       <div 
-        className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors"
         onClick={() => onToggleCollapse(group.id)}
       >
         <div className="flex items-center space-x-3">
@@ -94,16 +94,16 @@ export function ProcessStepGroup({
           )}
           {getGroupStatusIcon()}
           <div>
-            <h3 className="font-semibold text-gray-900 dark:text-white">
+            <h3 className="font-semibold text-gray-900">
               {group.title}
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-300">
+            <p className="text-sm text-gray-600">
               {group.description}
             </p>
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-500 dark:text-gray-400">
+          <span className="text-sm text-gray-500">
             {getGroupStatusText()}
           </span>
           {group.architectureDiagram && (
@@ -133,15 +133,15 @@ export function ProcessStepGroup({
                   {getStepIcon(step)}
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-medium text-gray-900 dark:text-white">
+                  <h4 className="font-medium text-gray-900">
                     {step.title}
                   </h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                  <p className="text-sm text-gray-600">
                     {step.description}
                   </p>
                   {step.status === 'active' && (
                     <div className="mt-2">
-                      <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                      <div className="w-full bg-gray-200 rounded-full h-2">
                         <div className="bg-blue-500 h-2 rounded-full animate-pulse w-1/2"></div>
                       </div>
                     </div>

@@ -52,7 +52,7 @@ export const defaultStepGroups: StepGroup[] = [
   },
   {
     id: 'events',
-    title: 'Event Processing',
+    title: 'Event Processing (WIP)',
     description: 'Trigger workflows via event notifications',
     isCollapsed: true,
     status: 'pending',
@@ -89,7 +89,7 @@ export const defaultStepGroups: StepGroup[] = [
   },
   {
     id: 'ai-analysis',
-    title: 'AI Analysis',
+    title: 'AI Analysis (WIP)',
     description: 'Intelligent content processing',
     isCollapsed: true,
     status: 'pending',
