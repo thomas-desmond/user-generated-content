@@ -3,7 +3,8 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 export async function POST(request: NextRequest) {
   try {
-    const { fileName } = (await request.json()) as { fileName: string };
+    const body = await request.json() as { fileName: string };
+    const { fileName } = body;
 
     if (!fileName) {
       return NextResponse.json(
@@ -12,27 +13,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get Cloudflare context and access AI_ANALYSIS_KV binding
-    const { env } = getCloudflareContext();
-    const aiAnalysisKV = env.AI_ANALYSIS_KV;
-
-    if (!aiAnalysisKV) {
-      throw new Error("AI_ANALYSIS_KV binding not found");
+    // Get the D1 database from the environment
+    const db = getCloudflareContext().env.UGC_DEMO_DB;
+    if (!db) {
+      return NextResponse.json(
+        { error: "Database not available" },
+        { status: 500 }
+      );
     }
 
-    // Check if AI analysis results exist in KV
-    const analysis = await aiAnalysisKV.get(fileName);
+    // Check if AI analysis exists for this filename
+    const result = await db.prepare(
+      "SELECT aiAnalysis FROM WorkflowTracking WHERE filename = ? AND aiAnalysis IS NOT NULL"
+    )
+      .bind(fileName)
+      .first();
 
-    if (analysis) {
-      return NextResponse.json({ analysis });
+    if (result && result.aiAnalysis) {
+      return NextResponse.json({
+        analysis: result.aiAnalysis,
+        analysisComplete: true,
+      });
     } else {
-      // Key not found - AI analysis not complete yet
-      return NextResponse.json({ analysis: null });
+      return NextResponse.json({
+        analysisComplete: false,
+      });
     }
   } catch (error) {
     console.error("Error checking AI analysis:", error);
     return NextResponse.json(
-      { error: "Failed to check AI analysis" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

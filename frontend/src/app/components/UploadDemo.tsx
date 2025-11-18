@@ -156,7 +156,7 @@ export function UploadDemo() {
 
   const checkWorkflowStatus = useCallback(async (fileName: string) => {
     try {
-      // Check if workflow instance exists in WORKFLOW_STATUS KV
+      // Check if workflow instance exists in D1 database
       const response = await fetch("/api/workflow-status", {
         method: "POST",
         headers: {
@@ -168,9 +168,9 @@ export function UploadDemo() {
       });
 
       if (response.ok) {
-        const data = (await response.json()) as { instanceId?: string };
-        if (data.instanceId) {
-          // Workflow instance found
+        const data = (await response.json()) as { instanceId?: string; workflowStarted?: boolean };
+        if (data.workflowStarted && data.instanceId) {
+          // Workflow instance found in D1 database
           updateStepStatus("workflow-started", "completed");
           return true;
         }
@@ -237,7 +237,7 @@ export function UploadDemo() {
 
   const checkAIAnalysisComplete = useCallback(async (fileName: string) => {
     try {
-      // Check if AI analysis results exist in AI_ANALYSIS_KV
+      // Check if AI analysis results exist in D1 database
       const response = await fetch("/api/ai-analysis", {
         method: "POST",
         headers: {
@@ -249,9 +249,9 @@ export function UploadDemo() {
       });
 
       if (response.ok) {
-        const data = (await response.json()) as { analysis?: string };
-        if (data.analysis) {
-          // AI analysis found - mark as complete and store the result
+        const data = (await response.json()) as { analysis?: string; analysisComplete?: boolean };
+        if (data.analysisComplete && data.analysis) {
+          // AI analysis found in D1 database - mark as complete and store the result
           updateStepStatus("ai-processing", "completed");
           updateStepStatus("ai-complete", "completed");
           setAiAnalysisResult(data.analysis);

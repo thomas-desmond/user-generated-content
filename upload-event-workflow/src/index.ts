@@ -5,8 +5,7 @@ type Env = {
 	MY_WORKFLOW: Workflow;
 	R2_BUCKET: R2Bucket;
 	AI: Ai;
-	AI_ANALYSIS_KV: KVNamespace;
-	WORKFLOW_STATUS: KVNamespace;
+	UGC_DEMO_DB: D1Database;
 };
 
 // User-defined params passed to your workflow
@@ -19,8 +18,15 @@ export class MyWorkflow extends WorkflowEntrypoint<Env, Params> {
 	async run(event: WorkflowEvent<Params>, step: WorkflowStep) {
 		const fileKey = event.payload.fileKey;
 
-		await step.do('Update workflow status with instanceId', async () => {
-			await this.env.WORKFLOW_STATUS.put(fileKey, event.instanceId);
+		await step.do('Add instance ID to Database', async () => {
+			await this.env.UGC_DEMO_DB.prepare(
+				`
+				INSERT INTO WorkflowTracking (filename, instanceId, aiAnalysis)
+				VALUES (?, ?, ?)
+			`
+			)
+				.bind(fileKey, event.instanceId, null)
+				.run();
 		});
 
 		const fileAsArrayBuffer = await step.do('Get file from R2', async () => {
@@ -42,12 +48,19 @@ export class MyWorkflow extends WorkflowEntrypoint<Env, Params> {
 			return response.description;
 		});
 
-		await step.do('Store AI analysis in KV', async () => {
-			await this.env.AI_ANALYSIS_KV.put(fileKey, AiImageToTextAnalysis);
+		await step.do('Store AI analysis results in DB', async () => {
+			await this.env.UGC_DEMO_DB.prepare(
+				`
+				UPDATE WorkflowTracking
+				SET aiAnalysis = ?
+				WHERE filename = ?
+			`
+			)
+				.bind(AiImageToTextAnalysis, fileKey)
+				.run();
 		});
 	}
 }
-// </docs-tag name="workflow-entrypoint">
 
 // Queue consumer to handle R2 upload events
 async function handleQueueMessage(batch: MessageBatch<any>, env: Env): Promise<void> {
@@ -76,31 +89,9 @@ async function handleQueueMessage(batch: MessageBatch<any>, env: Env): Promise<v
 	}
 }
 
-// <docs-tag name="workflows-fetch-handler">
 export default {
 	async fetch(req: Request, env: Env): Promise<Response> {
-		let url = new URL(req.url);
-
-		if (url.pathname.startsWith('/favicon')) {
-			return Response.json({}, { status: 404 });
-		}
-
-		// Get the status of an existing instance, if provided
-		// GET /?instanceId=<id here>
-		let fileKey = url.searchParams.get('fileKey');
-		if (fileKey) {
-			const instanceId = await env.WORKFLOW_STATUS.get(fileKey);
-			if (!instanceId) {
-				return Response.json({ status: 'No instance id found' });
-			}
-
-			let instance = await env.MY_WORKFLOW.get(instanceId);
-			return Response.json({
-				status: await instance.status(),
-			});
-		}
-
-		return Response.json({ status: 'No file key provided' });
+		return Response.json({ status: 'Not implemented' });
 	},
 
 	// Queue consumer handler for R2 upload events
@@ -108,5 +99,4 @@ export default {
 		return handleQueueMessage(batch, env);
 	},
 };
-// </docs-tag name="workflows-fetch-handler">
-// </docs-tag name="full-workflow-example">
+

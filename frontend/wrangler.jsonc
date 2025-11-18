@@ -23,19 +23,15 @@
     {
       "binding": "R2_BUCKET",
       "bucket_name": "user-generated-content-demo",
-	  "remote": true,
+      "remote": true
     }
   ],
-  "kv_namespaces": [
+  "d1_databases": [
     {
-      "binding": "AI_ANALYSIS_KV",
-      "id": "65c52f1b25574886851f3ccc56f7aae6",
-	  "remote": true,
-    },
-    {
-      "binding": "WORKFLOW_STATUS",
-      "id": "dda6f36e73784778880a7e8b70db22b6",
-	  "remote": true,
+      "binding": "UGC_DEMO_DB",
+      "database_name": "user-generated-content-demo",
+      "database_id": "0e087e46-9ecc-4b07-8b02-671aaf12ff3d",
+      "remote": true
     }
   ]
   /**
