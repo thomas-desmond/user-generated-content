@@ -52,8 +52,8 @@ export const defaultStepGroups: StepGroup[] = [
   },
   {
     id: 'events',
-    title: 'Event Processing (WIP)',
-    description: 'Trigger workflows via event notifications',
+    title: 'Event Processing',
+    description: 'Automated workflow triggered by upload events',
     isCollapsed: true,
     status: 'pending',
     architectureDiagram: {
@@ -69,57 +69,26 @@ export const defaultStepGroups: StepGroup[] = [
     steps: [
       {
         id: 'event-trigger',
-        title: 'Trigger Event Notification',
-        description: 'R2 upload triggers event notification',
+        title: 'Event Notification Triggered',
+        description: 'R2 upload automatically triggers event notification',
         status: 'pending'
       },
       {
-        id: 'queue-processing',
-        title: 'Queue Processing',
-        description: 'Event added to Cloudflare Queue for processing',
+        id: 'workflow-started',
+        title: 'Workflow Instance Created',
+        description: 'Event processed and workflow instance started',
         status: 'pending'
       },
       {
-        id: 'workflow-execution',
-        title: 'Workflow Execution',
-        description: 'Queue consumer triggers workflow execution',
-        status: 'pending'
-      }
-    ]
-  },
-  {
-    id: 'ai-analysis',
-    title: 'AI Analysis (WIP)',
-    description: 'Intelligent content processing',
-    isCollapsed: true,
-    status: 'pending',
-    architectureDiagram: {
-      title: 'AI Processing Pipeline',
-      // imagePath: '/diagrams/ai-analysis-flow.png', // Will be added later
-      fallbackText: [
-        '• Workflow → AI Workers',
-        '• Image Analysis & Classification',
-        '• Content Moderation & Insights',
-        '• Results Storage & Notifications'
-      ]
-    },
-    steps: [
-      {
-        id: 'image-analysis',
-        title: 'Image Analysis',
-        description: 'AI-powered image content analysis',
+        id: 'ai-processing',
+        title: 'AI Analysis in Progress',
+        description: 'Image being analyzed by AI model',
         status: 'pending'
       },
       {
-        id: 'content-classification',
-        title: 'Content Classification',
-        description: 'Categorize and tag image content',
-        status: 'pending'
-      },
-      {
-        id: 'results-processing',
-        title: 'Results Processing',
-        description: 'Store analysis results and trigger notifications',
+        id: 'ai-complete',
+        title: 'AI Analysis Complete',
+        description: 'Image analysis results stored successfully',
         status: 'pending'
       }
     ]
