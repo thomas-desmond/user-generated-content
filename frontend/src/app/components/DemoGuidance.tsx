@@ -25,7 +25,7 @@ export function DemoGuidance() {
         <div className="absolute bottom-16 right-0 w-80 bg-white rounded-lg shadow-xl border border-gray-200 p-4 max-h-96 overflow-y-auto">
           <div className="flex items-center space-x-2 mb-4">
             <Lightbulb className="w-5 h-5 text-gray-600" />
-            <h3 className="font-semibold text-gray-900">SE Demo Guidance</h3>
+            <h3 className="font-semibold text-gray-900">Demo Guidance</h3>
           </div>
 
           <div className="space-y-4 text-sm">

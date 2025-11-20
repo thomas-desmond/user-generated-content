@@ -30,6 +30,13 @@ export function UploadDemo() {
       setStepGroups((prev) =>
         prev.map((group) => ({
           ...group,
+          // Auto-expand Event Processing section when event-trigger is completed
+          isCollapsed:
+            group.id === "events" &&
+            stepId === "event-trigger" &&
+            status === "completed"
+              ? false
+              : group.isCollapsed,
           steps: group.steps.map((step) =>
             step.id === stepId ? { ...step, status } : step
           ),
@@ -56,9 +63,16 @@ export function UploadDemo() {
         setSelectedFile(file);
         updateStepStatus("select", "completed");
         // Reset other steps
-        ["presign", "upload", "complete", "download", "event-trigger", "workflow-started", "ai-processing", "ai-complete"].forEach((id) =>
-          updateStepStatus(id, "pending")
-        );
+        [
+          "presign",
+          "upload",
+          "complete",
+          "download",
+          "event-trigger",
+          "workflow-started",
+          "ai-processing",
+          "ai-complete",
+        ].forEach((id) => updateStepStatus(id, "pending"));
         setUploadedFileUrl(null);
         setUploadedFileName(null);
         setAiAnalysisResult(null);
@@ -128,7 +142,10 @@ export function UploadDemo() {
       updateStepStatus("event-trigger", "completed");
 
       // Step 2 of Event Processing: Start polling for workflow instance creation
-      pollForWorkflowStart(fileName);
+      // Add small delay to ensure Event Processing section expands before showing spinner
+      setTimeout(() => {
+        pollForWorkflowStart(fileName);
+      }, 100);
 
       // Store the uploaded file information
       setUploadedFileName(fileName);
@@ -154,145 +171,173 @@ export function UploadDemo() {
     }
   }, [selectedFile, stepGroups, updateStepStatus]);
 
-  const checkWorkflowStatus = useCallback(async (fileName: string) => {
-    try {
-      // Check if workflow instance exists in D1 database
-      const response = await fetch("/api/workflow-status", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          fileName: fileName,
-        }),
-      });
+  const checkWorkflowStatus = useCallback(
+    async (fileName: string) => {
+      try {
+        // Check if workflow instance exists in D1 database
+        const response = await fetch("/api/workflow-status", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            fileName: fileName,
+          }),
+        });
 
-      if (response.ok) {
-        const data = (await response.json()) as { instanceId?: string; workflowStarted?: boolean };
-        if (data.workflowStarted && data.instanceId) {
-          // Workflow instance found in D1 database
-          updateStepStatus("workflow-started", "completed");
-          return true;
-        }
-      }
-      return false;
-    } catch (error) {
-      console.error("Failed to check workflow status:", error);
-      return false;
-    }
-  }, [updateStepStatus]);
-
-  const pollForWorkflowStart = useCallback(async (fileName: string) => {
-    const maxAttempts = 30; // Poll for up to 15 seconds
-    const pollInterval = 500; // 500ms intervals
-
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      const workflowStarted = await checkWorkflowStatus(fileName);
-      if (workflowStarted) {
-        // Once workflow starts, begin monitoring AI progress
-        pollForAIProgress(fileName);
-        return;
-      }
-      
-      // Wait before next attempt
-      await new Promise(resolve => setTimeout(resolve, pollInterval));
-    }
-    
-    // If we get here, workflow didn't start within timeout
-    console.warn("Workflow instance not detected within timeout period");
-  }, [checkWorkflowStatus]);
-
-  const checkWorkflowProgress = useCallback(async (fileName: string) => {
-    try {
-      // Check current workflow status via the workflow endpoint
-      const response = await fetch(
-        `https://upload-event-workflow.dev-demos.workers.dev/?fileKey=${encodeURIComponent(fileName)}`
-      );
-
-      if (response.ok) {
-        const data = (await response.json()) as { 
-          status?: string; 
-          currentStep?: string;
-          completed?: boolean;
-        };
-        
-        if (data.currentStep) {
-          // If workflow is running and not completed, mark AI processing as active
-          if (!data.completed && (
-            data.currentStep.includes("AI") || 
-            data.currentStep.includes("analysis") ||
-            data.currentStep.includes("Analyze")
-          )) {
-            updateStepStatus("ai-processing", "active");
-            return "processing";
+        if (response.ok) {
+          const data = (await response.json()) as {
+            instanceId?: string;
+            workflowStarted?: boolean;
+          };
+          if (data.workflowStarted && data.instanceId) {
+            // Workflow instance found in D1 database
+            updateStepStatus("workflow-started", "completed");
+            return true;
           }
         }
+        return false;
+      } catch (error) {
+        console.error("Failed to check workflow status:", error);
+        return false;
       }
-      return "unknown";
-    } catch (error) {
-      console.error("Failed to check workflow progress:", error);
-      return "error";
-    }
-  }, [updateStepStatus]);
+    },
+    [updateStepStatus]
+  );
 
-  const checkAIAnalysisComplete = useCallback(async (fileName: string) => {
-    try {
-      // Check if AI analysis results exist in D1 database
-      const response = await fetch("/api/ai-analysis", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          fileName: fileName,
-        }),
-      });
+  const pollForWorkflowStart = useCallback(
+    async (fileName: string) => {
+      const maxAttempts = 30; // Poll for up to 15 seconds
+      const pollInterval = 500; // 500ms intervals
 
-      if (response.ok) {
-        const data = (await response.json()) as { analysis?: string; analysisComplete?: boolean };
-        if (data.analysisComplete && data.analysis) {
-          // AI analysis found in D1 database - mark as complete and store the result
-          updateStepStatus("ai-processing", "completed");
-          updateStepStatus("ai-complete", "completed");
-          setAiAnalysisResult(data.analysis);
-          return true;
+      // Activate spinner on Workflow Instance Created step after event notification completes
+      updateStepStatus("workflow-started", "active");
+
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const workflowStarted = await checkWorkflowStatus(fileName);
+        if (workflowStarted) {
+          // Once workflow starts, begin monitoring AI progress
+          pollForAIProgress(fileName);
+          return;
         }
-      }
-      return false;
-    } catch (error) {
-      console.error("Failed to check AI analysis:", error);
-      return false;
-    }
-  }, [updateStepStatus, setAiAnalysisResult]);
 
-  const pollForAIProgress = useCallback(async (fileName: string) => {
-    const maxAttempts = 60; // Poll for up to 30 seconds
-    const pollInterval = 500; // 500ms intervals
-
-    // Mark AI processing as active immediately
-    updateStepStatus("ai-processing", "active");
-
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      const progressStatus = await checkWorkflowProgress(fileName);
-      
-      if (progressStatus === "processing") {
-        // Continue polling
-        await new Promise(resolve => setTimeout(resolve, pollInterval));
-        continue;
+        // Wait before next attempt
+        await new Promise((resolve) => setTimeout(resolve, pollInterval));
       }
-      
-      // Check if AI analysis is complete by looking at AI_ANALYSIS_KV
-      const aiComplete = await checkAIAnalysisComplete(fileName);
-      if (aiComplete) {
-        return; // AI analysis complete, stop polling
+
+      // If we get here, workflow didn't start within timeout
+      console.warn("Workflow instance not detected within timeout period");
+      updateStepStatus("workflow-started", "error");
+    },
+    [checkWorkflowStatus, updateStepStatus]
+  );
+
+  const checkWorkflowProgress = useCallback(
+    async (fileName: string) => {
+      try {
+        // Check current workflow status via the workflow endpoint
+        const response = await fetch(
+          `https://upload-event-workflow.dev-demos.workers.dev/?fileKey=${encodeURIComponent(
+            fileName
+          )}`
+        );
+
+        if (response.ok) {
+          const data = (await response.json()) as {
+            status?: string;
+            currentStep?: string;
+            completed?: boolean;
+          };
+
+          if (data.currentStep) {
+            // If workflow is running and not completed, mark AI processing as active
+            if (
+              !data.completed &&
+              (data.currentStep.includes("AI") ||
+                data.currentStep.includes("analysis") ||
+                data.currentStep.includes("Analyze"))
+            ) {
+              updateStepStatus("ai-processing", "active");
+              return "processing";
+            }
+          }
+        }
+        return "unknown";
+      } catch (error) {
+        console.error("Failed to check workflow progress:", error);
+        return "error";
       }
-      
-      // Wait before next attempt
-      await new Promise(resolve => setTimeout(resolve, pollInterval));
-    }
-    
-    console.warn("AI analysis progress polling timed out");
-  }, [checkWorkflowProgress, checkAIAnalysisComplete, updateStepStatus]);
+    },
+    [updateStepStatus]
+  );
+
+  const checkAIAnalysisComplete = useCallback(
+    async (fileName: string) => {
+      try {
+        // Check if AI analysis results exist in D1 database
+        const response = await fetch("/api/ai-analysis", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            fileName: fileName,
+          }),
+        });
+
+        if (response.ok) {
+          const data = (await response.json()) as {
+            analysis?: string;
+            analysisComplete?: boolean;
+          };
+          if (data.analysisComplete && data.analysis) {
+            // AI analysis found in D1 database - mark as complete and store the result
+            updateStepStatus("ai-processing", "completed");
+            updateStepStatus("ai-complete", "completed");
+            setAiAnalysisResult(data.analysis);
+            return true;
+          }
+        }
+        return false;
+      } catch (error) {
+        console.error("Failed to check AI analysis:", error);
+        return false;
+      }
+    },
+    [updateStepStatus, setAiAnalysisResult]
+  );
+
+  const pollForAIProgress = useCallback(
+    async (fileName: string) => {
+      const maxAttempts = 60; // Poll for up to 30 seconds
+      const pollInterval = 500; // 500ms intervals
+
+      // Mark AI processing as active immediately
+      updateStepStatus("ai-processing", "active");
+
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const progressStatus = await checkWorkflowProgress(fileName);
+
+        if (progressStatus === "processing") {
+          // Continue polling
+          await new Promise((resolve) => setTimeout(resolve, pollInterval));
+          continue;
+        }
+
+        // Check if AI analysis is complete by looking at AI_ANALYSIS_KV
+        const aiComplete = await checkAIAnalysisComplete(fileName);
+        if (aiComplete) {
+          return; // AI analysis complete, stop polling
+        }
+
+        // Wait before next attempt
+        await new Promise((resolve) => setTimeout(resolve, pollInterval));
+      }
+
+      console.warn("AI analysis progress polling timed out");
+    },
+    [checkWorkflowProgress, checkAIAnalysisComplete, updateStepStatus]
+  );
 
   const fetchAndDisplayImage = useCallback(async (fileName: string) => {
     try {
@@ -466,17 +511,19 @@ export function UploadDemo() {
 
       {/* Right Side - Process Explanation */}
       <div className="bg-white rounded-xl shadow-sm border border-orange-50 p-6">
-        {!selectedFile && (
-          <div className="mb-6 p-4 bg-gradient-to-r from-orange-50/20 to-red-50/20 border border-orange-100/60 rounded-lg">
-            <p className="text-gray-700 text-sm leading-relaxed border-l-4 border-orange-500 pl-3">
-              <strong>Interactive Demo:</strong> Upload an image to see the
-              complete secure workflow in action. This infrastructure pattern
-              scales from individual uploads to enterprise-level content
-              management, supporting everything from user photos to AI-generated
-              media with zero egress fees.
-            </p>
-          </div>
-        )}
+        <div className="mb-6 p-4 bg-gradient-to-r from-orange-50/20 to-red-50/20 border border-orange-100/60 rounded-lg">
+          <p className="text-gray-700 text-sm leading-relaxed border-l-4 border-orange-500 pl-3">
+            <strong>Interactive Demo:</strong> Upload an image to see the
+            complete workflow in action.
+            <br /><br />
+            This demo uses pre-signed URL&apos;s to
+            upload files directly to Cloudflare R2, and Cloudflare Workers to
+            handle the upload process. R2 is configured to trigger an event
+            notification when a new file is uploaded, which is first sent to a Cloudflare 
+            Queue, then processed inside of a Cloudflare Workflow. The Workflow generates 
+            an AI analysis of the image, and stores the results in Cloudflare D1. 
+          </p>
+        </div>
         <h2 className="text-2xl font-semibold text-gray-900 mb-6">
           Workflow Process
         </h2>

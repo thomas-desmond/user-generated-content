@@ -3,6 +3,8 @@
 import { UploadDemo } from './components/UploadDemo';
 import { UGCContext } from './components/UGCContext';
 import { DemoGuidance } from './components/DemoGuidance';
+import { CloudflareProductsShowcase } from './components/CloudflareProductsShowcase';
+import { Footer } from './components/Footer';
 
 export default function Home() {
 	return (
@@ -14,7 +16,7 @@ export default function Home() {
 							<span className="text-white font-bold text-xl">CF</span>
 						</div>
 						<h1 className="text-4xl font-bold bg-gradient-to-r from-[#F6821F] to-[#FF6633] bg-clip-text text-transparent">
-							User-Generated Content Infrastructure
+							User-Generated Content
 						</h1>
 					</div>
 					<p className="text-lg text-gray-600 mb-2">
@@ -27,9 +29,11 @@ export default function Home() {
 				</div>
 				
 				<UploadDemo />
+				<CloudflareProductsShowcase />
 				<UGCContext />
 			</div>
 			<DemoGuidance />
+			<Footer />
 		</div>
 	);
 }

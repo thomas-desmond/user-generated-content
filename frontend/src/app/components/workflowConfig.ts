@@ -11,10 +11,11 @@ export const defaultStepGroups: StepGroup[] = [
       title: 'R2 Upload Architecture',
       imagePath: '/secure-user-uploads.png',
       fallbackText: [
-        '• Next.js App → API Route (/api/upload)',
-        '• API Route → Cloudflare R2 (AWS SDK)',
-        '• Pre-signed URL → Direct Browser Upload',
-        '• Secure, scalable file storage solution'
+        'User initiates upload from the frontend: The app collects file details (e.g. size, name) and calls a backend API (a Cloudflare Worker) to begin the upload process.',
+        'Worker authenticates the user and validates the request: The Worker confirms that the user is logged in, has upload permissions, and that the file is within acceptable limits (for example, 10MB max, allowed MIME types).',
+        'Worker returns a signed PUT URL to R2: A signed URL allows the frontend to upload directly to R2 for a limited time, under a specific key or namespace. There is no need for the Worker to handle large files directly.',
+        'Frontend uploads the file directly to R2: The file is streamed directly from the client to R2.',
+        '(Optional) Trigger post-upload workflows: R2 offers event notifications to send messages to a queue when data in your R2 bucket changes, like a new upload. Example post-processing: Scan, moderate, or transform the file, write metadata (for example, user_id, file_path, timestamp) to D1, Cloudflare\'s serverless SQL database, notify the user or update a dashboard/UI.',
       ]
     },
     steps: [
@@ -58,13 +59,8 @@ export const defaultStepGroups: StepGroup[] = [
     status: 'pending',
     architectureDiagram: {
       title: 'Event-Driven Architecture',
-      // imagePath: '/diagrams/event-processing-flow.png', // Will be added later
-      fallbackText: [
-        '• R2 Upload → Event Notifications',
-        '• Event Notifications → Cloudflare Queue',
-        '• Queue → Workflow Trigger',
-        '• Asynchronous, scalable processing'
-      ]
+      imagePath: '/upload-event-processing.png',
+      fallbackText: []
     },
     steps: [
       {
