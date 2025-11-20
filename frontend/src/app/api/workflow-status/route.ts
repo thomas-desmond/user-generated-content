@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
 
     // Check if workflow exists for this filename
     const result = await db.prepare(
-      "SELECT instanceId FROM WorkflowTracking WHERE filename = ?"
+      "SELECT instanceId FROM WorkflowTracking WHERE filename = ? AND aiAnalysis IS NULL"
     )
       .bind(fileName)
       .first();

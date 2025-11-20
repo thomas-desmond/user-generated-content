@@ -19,14 +19,31 @@ export class MyWorkflow extends WorkflowEntrypoint<Env, Params> {
 		const fileKey = event.payload.fileKey;
 
 		await step.do('Add instance ID to Database', async () => {
-			await this.env.UGC_DEMO_DB.prepare(
-				`
-				INSERT INTO WorkflowTracking (filename, instanceId, aiAnalysis)
-				VALUES (?, ?, ?)
-			`
+			// Check if filename already exists
+			const existingRecord = await this.env.UGC_DEMO_DB.prepare(
+				`SELECT id FROM WorkflowTracking WHERE filename = ?`
 			)
-				.bind(fileKey, event.instanceId, null)
-				.run();
+				.bind(fileKey)
+				.first();
+
+			if (existingRecord) {
+				// Update existing record with new instance ID and blank out aiAnalysis
+				await this.env.UGC_DEMO_DB.prepare(
+					`UPDATE WorkflowTracking
+					 SET instanceId = ?, aiAnalysis = NULL
+					 WHERE filename = ?`
+				)
+					.bind(event.instanceId, fileKey)
+					.run();
+			} else {
+				// Insert new record
+				await this.env.UGC_DEMO_DB.prepare(
+					`INSERT INTO WorkflowTracking (filename, instanceId, aiAnalysis)
+					 VALUES (?, ?, ?)`
+				)
+					.bind(fileKey, event.instanceId, null)
+					.run();
+			}
 		});
 
 		const fileAsArrayBuffer = await step.do('Get file from R2', async () => {

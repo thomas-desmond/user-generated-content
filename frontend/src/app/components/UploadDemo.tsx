@@ -232,45 +232,6 @@ export function UploadDemo() {
     [checkWorkflowStatus, updateStepStatus]
   );
 
-  const checkWorkflowProgress = useCallback(
-    async (fileName: string) => {
-      try {
-        // Check current workflow status via the workflow endpoint
-        const response = await fetch(
-          `https://upload-event-workflow.dev-demos.workers.dev/?fileKey=${encodeURIComponent(
-            fileName
-          )}`
-        );
-
-        if (response.ok) {
-          const data = (await response.json()) as {
-            status?: string;
-            currentStep?: string;
-            completed?: boolean;
-          };
-
-          if (data.currentStep) {
-            // If workflow is running and not completed, mark AI processing as active
-            if (
-              !data.completed &&
-              (data.currentStep.includes("AI") ||
-                data.currentStep.includes("analysis") ||
-                data.currentStep.includes("Analyze"))
-            ) {
-              updateStepStatus("ai-processing", "active");
-              return "processing";
-            }
-          }
-        }
-        return "unknown";
-      } catch (error) {
-        console.error("Failed to check workflow progress:", error);
-        return "error";
-      }
-    },
-    [updateStepStatus]
-  );
-
   const checkAIAnalysisComplete = useCallback(
     async (fileName: string) => {
       try {
@@ -316,14 +277,6 @@ export function UploadDemo() {
       updateStepStatus("ai-processing", "active");
 
       for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        const progressStatus = await checkWorkflowProgress(fileName);
-
-        if (progressStatus === "processing") {
-          // Continue polling
-          await new Promise((resolve) => setTimeout(resolve, pollInterval));
-          continue;
-        }
-
         // Check if AI analysis is complete by looking at AI_ANALYSIS_KV
         const aiComplete = await checkAIAnalysisComplete(fileName);
         if (aiComplete) {
@@ -336,7 +289,7 @@ export function UploadDemo() {
 
       console.warn("AI analysis progress polling timed out");
     },
-    [checkWorkflowProgress, checkAIAnalysisComplete, updateStepStatus]
+    [checkAIAnalysisComplete, updateStepStatus]
   );
 
   const fetchAndDisplayImage = useCallback(async (fileName: string) => {
