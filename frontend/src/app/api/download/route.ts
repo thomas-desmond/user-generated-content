@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AwsClient } from 'aws4fetch';
 
+export const dynamic = 'force-dynamic';
+
 // Type definition for the request body
 interface DownloadRequest {
   fileName: string;
