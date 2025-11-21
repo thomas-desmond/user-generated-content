@@ -61,7 +61,6 @@ export class MyWorkflow extends WorkflowEntrypoint<Env, Params> {
 				max_tokens: 512,
 			};
 			const response = await this.env.AI.run('@cf/llava-hf/llava-1.5-7b-hf', input);
-			console.log(response.description);
 			return response.description;
 		});
 
@@ -81,14 +80,9 @@ export class MyWorkflow extends WorkflowEntrypoint<Env, Params> {
 
 // Queue consumer to handle R2 upload events
 async function handleQueueMessage(batch: MessageBatch<any>, env: Env): Promise<void> {
-	console.log('=== QUEUE MESSAGE BATCH RECEIVED ===');
-	console.log('Batch size:', batch.messages.length);
-	console.log('Queue name:', batch.queue);
-
 	for (const message of batch.messages) {
 		try {
 			// Trigger the workflow with the queue message data
-			console.log('=== TRIGGERING WORKFLOW ===');
 			const instance = await env.MY_WORKFLOW.create({
 				params: {
 					fileKey: message.body.object.key,
@@ -97,12 +91,9 @@ async function handleQueueMessage(batch: MessageBatch<any>, env: Env): Promise<v
 
 			message.ack(); // Acknowledge successful processing
 		} catch (error) {
-			console.error('Error processing queue message:', error);
-			console.error('Error details:', JSON.stringify(error, null, 2));
 			// Don't ack the message so it will be retried
 		}
 
-		console.log('=== QUEUE MESSAGE PROCESSING COMPLETE ===');
 	}
 }
 

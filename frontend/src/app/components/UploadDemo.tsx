@@ -119,9 +119,6 @@ export function UploadDemo() {
       // Step 2: Upload to R2
       updateStepStatus("upload", "active");
 
-      console.log("Uploading file:", selectedFile.name);
-      console.log("Signed URL:", signedUrl);
-
       const uploadResponse = await fetch(signedUrl, {
         method: "PUT",
         body: selectedFile,

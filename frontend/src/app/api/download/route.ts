@@ -28,7 +28,6 @@ export async function POST(request: NextRequest) {
     // Create the URL for the R2 object
     const objectUrl = new URL(`https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${process.env.R2_BUCKET_NAME}/${fileName}`);
 
-    console.log('Object Download URL:', objectUrl.toString());
     const signedUrl = await aws.sign(objectUrl, {
       method: 'GET',
       aws: {
