@@ -59,31 +59,48 @@ export function UploadDemo() {
   const handleFileSelect = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
-      if (file && file.type.startsWith("image/")) {
-        setSelectedFile(file);
-        updateStepStatus("select", "completed");
-        // Reset other steps
-        [
-          "presign",
-          "upload",
-          "complete",
-          "download",
-          "event-trigger",
-          "workflow-started",
-          "ai-processing",
-          "ai-complete",
-        ].forEach((id) => updateStepStatus(id, "pending"));
-        setUploadedFileUrl(null);
-        setUploadedFileName(null);
-        setAiAnalysisResult(null);
-        // Clean up previous image URL
-        if (displayImageUrl) {
-          URL.revokeObjectURL(displayImageUrl);
-          setDisplayImageUrl(null);
-        }
+      if (!file) return;
+
+      // Check if file is an image
+      if (!file.type.startsWith("image/")) {
+        alert(`Please select an image file. Selected file type: ${file.type || 'unknown'}`);
+        // Clear the input
+        event.target.value = '';
+        return;
+      }
+
+      // Check file size (8MB = 8 * 1024 * 1024 bytes)
+      const maxSizeInBytes = 8 * 1024 * 1024;
+      if (file.size > maxSizeInBytes) {
+        alert(`File size must be 8MB or smaller. Your file is too big at ${(file.size / 1024 / 1024).toFixed(2)}MB.`);
+        // Clear the input
+        event.target.value = '';
+        return;
+      }
+      
+      setSelectedFile(file);
+      updateStepStatus("select", "completed");
+      // Reset other steps
+      [
+        "presign",
+        "upload",
+        "complete",
+        "download",
+        "event-trigger",
+        "workflow-started",
+        "ai-processing",
+        "ai-complete",
+      ].forEach((id) => updateStepStatus(id, "pending"));
+      setUploadedFileUrl(null);
+      setUploadedFileName(null);
+      setAiAnalysisResult(null);
+      // Clean up previous image URL
+      if (displayImageUrl) {
+        URL.revokeObjectURL(displayImageUrl);
+        setDisplayImageUrl(null);
       }
     },
-    [updateStepStatus]
+    [updateStepStatus, displayImageUrl]
   );
 
   const handleUpload = useCallback(async () => {
@@ -103,6 +120,7 @@ export function UploadDemo() {
         body: JSON.stringify({
           fileName: selectedFile.name,
           fileType: selectedFile.type,
+          fileSize: selectedFile.size,
         }),
       });
 
@@ -374,7 +392,7 @@ export function UploadDemo() {
                       Choose an image to upload
                     </p>
                     <p className="text-sm text-gray-500">
-                      PNG, JPG, GIF up to 10MB
+                      PNG, JPG, GIF up to 8MB
                     </p>
                   </div>
                 </>

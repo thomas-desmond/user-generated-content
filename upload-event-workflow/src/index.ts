@@ -83,7 +83,7 @@ async function handleQueueMessage(batch: MessageBatch<any>, env: Env): Promise<v
 	for (const message of batch.messages) {
 		try {
 			// Trigger the workflow with the queue message data
-			const instance = await env.MY_WORKFLOW.create({
+			await env.MY_WORKFLOW.create({
 				params: {
 					fileKey: message.body.object.key,
 				},

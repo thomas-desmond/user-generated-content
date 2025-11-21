@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 interface UploadRequest {
   fileName: string;
   fileType: string;
+  fileSize?: number;
 }
 
 export async function POST(request: NextRequest) {
@@ -17,11 +18,20 @@ export async function POST(request: NextRequest) {
   });
   
   try {
-    const { fileName, fileType } = (await request.json()) as UploadRequest;
+    const { fileName, fileType, fileSize } = (await request.json()) as UploadRequest;
 
     if (!fileName || !fileType) {
       return NextResponse.json(
         { error: "fileName and fileType are required" },
+        { status: 400 }
+      );
+    }
+
+    // Validate file size (8MB = 8 * 1024 * 1024 bytes)
+    const maxSizeInBytes = 8 * 1024 * 1024;
+    if (fileSize && fileSize > maxSizeInBytes) {
+      return NextResponse.json(
+        { error: `File size must be 8MB or smaller. File size: ${(fileSize / 1024 / 1024).toFixed(2)}MB` },
         { status: 400 }
       );
     }
