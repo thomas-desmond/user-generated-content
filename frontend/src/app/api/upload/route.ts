@@ -7,8 +7,8 @@ interface UploadRequest {
 }
 
 const aws = new AwsClient({
-  accessKeyId: process.env.R2_ACCESS_KEY_ID!,
-  secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+  accessKeyId: process.env.R2_ACCESS_KEY_ID as string,
+  secretAccessKey: process.env.R2_SECRET_ACCESS_KEY as string,
   region: 'auto',
   service: 's3',
 });
