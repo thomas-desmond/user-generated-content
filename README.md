@@ -119,7 +119,7 @@ When choosing deployment options:
 ```
 
 
-- Create and Apply R2 API Keys https://developers.cloudflare.com/r2/api/tokens/
+- Create R2 API Keys https://developers.cloudflare.com/r2/api/tokens/
   - Navigate to the overview page for all of your R2 Buckets
   - Fine the API Tokens section and choose `Manage`
   - Create an Account Token
