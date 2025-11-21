@@ -63,21 +63,31 @@ export function UploadDemo() {
 
       // Check if file is an image
       if (!file.type.startsWith("image/")) {
-        alert(`Please select an image file. Selected file type: ${file.type || 'unknown'}`);
+        alert(
+          `Please select an image file. Selected file type: ${
+            file.type || "unknown"
+          }`
+        );
         // Clear the input
-        event.target.value = '';
+        event.target.value = "";
         return;
       }
 
       // Check file size (8MB = 8 * 1024 * 1024 bytes)
       const maxSizeInBytes = 8 * 1024 * 1024;
       if (file.size > maxSizeInBytes) {
-        alert(`File size must be 8MB or smaller. Your file is too big at ${(file.size / 1024 / 1024).toFixed(2)}MB.`);
+        alert(
+          `File size must be 8MB or smaller. Your file is too big at ${(
+            file.size /
+            1024 /
+            1024
+          ).toFixed(2)}MB.`
+        );
         // Clear the input
-        event.target.value = '';
+        event.target.value = "";
         return;
       }
-      
+
       setSelectedFile(file);
       updateStepStatus("select", "completed");
       // Reset other steps
@@ -155,6 +165,7 @@ export function UploadDemo() {
 
       // Step 1 of Event Processing: Event notification is automatically triggered by R2
       updateStepStatus("event-trigger", "completed");
+      updateStepStatus("queue-batch", "completed");
 
       // Step 2 of Event Processing: Start polling for workflow instance creation
       // Add small delay to ensure Event Processing section expands before showing spinner
@@ -483,13 +494,14 @@ export function UploadDemo() {
           <p className="text-gray-700 text-sm leading-relaxed border-l-4 border-orange-500 pl-3">
             <strong>Interactive Demo:</strong> Upload an image to see the
             complete workflow in action.
-            <br /><br />
-            This demo uses pre-signed URL&apos;s to
-            upload files directly to Cloudflare R2, and Cloudflare Workers to
-            handle the upload process. R2 is configured to trigger an event
-            notification when a new file is uploaded, which is first sent to a Cloudflare 
-            Queue, then processed inside of a Cloudflare Workflow. The Workflow generates 
-            an AI analysis of the image, and stores the results in Cloudflare D1. 
+            <br />
+            <br />
+            This demo uses pre-signed URL&apos;s to upload files directly to
+            Cloudflare R2, and Cloudflare Workers to handle the upload process.
+            R2 is configured to trigger an event notification when a new file is
+            uploaded, which is first sent to a Cloudflare Queue, then processed
+            inside of a Cloudflare Workflow. The Workflow generates an AI
+            analysis of the image, and stores the results in Cloudflare D1.
           </p>
         </div>
         <h2 className="text-2xl font-semibold text-gray-900 mb-6">
