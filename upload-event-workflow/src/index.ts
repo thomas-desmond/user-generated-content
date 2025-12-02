@@ -20,11 +20,7 @@ export class MyWorkflow extends WorkflowEntrypoint<Env, Params> {
 
 		await step.do('Add instance ID to Database', async () => {
 			// Check if filename already exists
-			const existingRecord = await this.env.UGC_DEMO_DB.prepare(
-				`SELECT id FROM WorkflowTracking WHERE filename = ?`
-			)
-				.bind(fileKey)
-				.first();
+			const existingRecord = await this.env.UGC_DEMO_DB.prepare(`SELECT id FROM WorkflowTracking WHERE filename = ?`).bind(fileKey).first();
 
 			if (existingRecord) {
 				// Update existing record with new instance ID and blank out aiAnalysis
@@ -60,20 +56,19 @@ export class MyWorkflow extends WorkflowEntrypoint<Env, Params> {
 				prompt: 'Provide a description of this image',
 				max_tokens: 512,
 			};
-			const response = await this.env.AI.run('@cf/llava-hf/llava-1.5-7b-hf', input);
+			const response = await this.env.AI.run('@cf/llava-hf/llava-1.5-7b-hf', input, {
+				gateway: {
+					id: 'user-upload-event',
+					skipCache: false,
+				},
+			});
 			return response.description;
 		});
 
 		await step.do('Store AI analysis results in DB', async () => {
 			await this.env.UGC_DEMO_DB.prepare(
-				`
-				UPDATE WorkflowTracking
-				SET aiAnalysis = ?
-				WHERE filename = ?
-			`
-			)
-				.bind(AiImageToTextAnalysis, fileKey)
-				.run();
+				`UPDATE WorkflowTracking SET aiAnalysis = ? WHERE filename = ?`
+			).bind(AiImageToTextAnalysis, fileKey).run();
 		});
 	}
 }
@@ -93,7 +88,6 @@ async function handleQueueMessage(batch: MessageBatch<any>, env: Env): Promise<v
 		} catch (error) {
 			// Don't ack the message so it will be retried
 		}
-
 	}
 }
 
@@ -107,4 +101,3 @@ export default {
 		return handleQueueMessage(batch, env);
 	},
 };
-
