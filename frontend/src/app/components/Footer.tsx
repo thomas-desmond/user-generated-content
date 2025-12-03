@@ -1,6 +1,6 @@
 "use client";
 
-import { Github } from "lucide-react";
+import { Github, MessageCircle } from "lucide-react";
 
 export function Footer() {
   return (
@@ -15,8 +15,17 @@ export function Footer() {
             </div>
           </div>
 
-          {/* GitHub Link */}
-          <div className="flex items-center space-x-4">
+          {/* Links */}
+          <div className="flex items-center space-x-6">
+            <a
+              href="https://forms.gle/q5ns4YqmRGdd7CqX9"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors duration-200"
+            >
+              <MessageCircle size={20} />
+              <span>Give Feedback</span>
+            </a>
             <a
               href="https://github.com/thomas-desmond/user-generated-content" // Replace with your actual GitHub repo URL
               target="_blank"
