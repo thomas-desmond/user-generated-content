@@ -58,7 +58,7 @@ export class MyWorkflow extends WorkflowEntrypoint<Env, Params> {
 			};
 			const response = await this.env.AI.run('@cf/llava-hf/llava-1.5-7b-hf', input, {
 				gateway: {
-					id: 'user-upload-event',
+					id: 'developer-demos',
 					skipCache: false,
 				},
 			});
