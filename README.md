@@ -1,11 +1,11 @@
 # User-Generated Content Demo
 
-A comprehensive demonstration of scalable, cost-efficient user-generated content (UGC) management using Cloudflare's serverless platform. This demo showcases how modern applications can handle file uploads, processing, and AI analysis with zero egress fees and global performance.
+A comprehensive demonstration of scalable user-generated content (UGC) management using Cloudflare's serverless platform. This demo showcases how modern applications can handle file uploads, event-driven processing, and AI analysis on a single integrated platform.
 
 ### Key Components
 
 1. **Next.js Frontend** - Interactive upload interface with real-time progress tracking
-2. **Cloudflare R2** - S3-compatible object storage with zero egress fees
+2. **Cloudflare R2** - S3-compatible object storage with native event notifications
 3. **Cloudflare Workers** - Serverless functions for upload handling and API endpoints
 4. **Cloudflare Workflows** - Durable execution for multi-step processing
 5. **Cloudflare Queues** - Event-driven messaging for reliable processing
