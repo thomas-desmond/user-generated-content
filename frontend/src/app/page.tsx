@@ -2,7 +2,6 @@
 
 import { UploadDemo } from './components/UploadDemo';
 import { UGCContext } from './components/UGCContext';
-import { DemoGuidance } from './components/DemoGuidance';
 import { CloudflareProductsShowcase } from './components/CloudflareProductsShowcase';
 import { Footer } from './components/Footer';
 
@@ -25,8 +24,7 @@ export default function Home() {
 						Scalable, cost-efficient content management with <span className="font-semibold border-b-2 border-orange-500">Cloudflare R2</span>
 					</p>
 					<p className="text-sm text-gray-500 max-w-2xl mx-auto">
-						Modern applications are increasingly shaped by user-created content. This demo showcases 
-						secure, scalable infrastructure for handling images, videos, documents, and more with zero egress fees.
+						Modern applications are increasingly shaped by user-created content. This demo showcases a complete event-driven pipeline for handling uploads, processing, and AI analysis on a single integrated platform.
 					</p>
 				</div>
 				
@@ -34,7 +32,6 @@ export default function Home() {
 				<CloudflareProductsShowcase />
 				<UGCContext />
 			</div>
-			<DemoGuidance />
 			<Footer />
 		</div>
 	);
