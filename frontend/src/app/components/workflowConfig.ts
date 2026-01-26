@@ -66,7 +66,15 @@ export const defaultStepGroups: StepGroup[] = [
     architectureDiagram: {
       title: "Event-Driven Architecture",
       imagePath: "/upload-event-processing.png",
-      fallbackText: [],
+      fallbackText: [
+        "R2 Event Notification fires on upload: When a file lands in R2, an event notification is automatically triggered. This decouples storage from processing.",
+        "Event is sent to Cloudflare Queue: The notification is delivered to a Queue, which batches events and provides reliable, at-least-once delivery. Queues handle backpressure and retry failed messages automatically.",
+        "Queue consumer triggers a Workflow instance: A Worker consumes batched messages from the Queue and creates a Workflow instance for each upload event. The Workflow receives the file key as input.",
+        "Workflow fetches file from R2: The first Workflow step retrieves the uploaded file from R2 using the file key. Workflows provide durable execution, if this step fails, it automatically retries.",
+        "Workflow calls Workers AI for analysis: The file is passed to Workers AI for image-to-text analysis. Long-running AI inference is handled gracefully by Workflows' built-in timeout and retry mechanisms.",
+        "Workflow stores results in D1: The final step writes the AI analysis results to D1 (serverless SQL database) along with metadata like the workflow instance ID and filename.",
+        "Key benefits: Fully serverless and auto-scaling, durable execution with automatic retries, decoupled architecture (storage, compute, and AI are independent), no infrastructure to manage.",
+      ],
     },
     steps: [
       {
