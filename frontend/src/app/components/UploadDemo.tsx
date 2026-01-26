@@ -15,8 +15,85 @@ import {
 } from "./ProcessStepGroup";
 import { defaultStepGroups } from "./workflowConfig";
 
+// Configuration for image resizing
+const RESIZE_CONFIG = {
+  maxDimension: 1024, // Max width or height in pixels
+  quality: 0.7, // JPEG quality (0-1)
+  outputType: "image/jpeg" as const,
+};
+
+/**
+ * Resizes an image file to reduce its size for faster AI processing.
+ * Maintains aspect ratio while ensuring the largest dimension is <= maxDimension.
+ * Converts to JPEG for smaller file size.
+ */
+async function resizeImage(file: File): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) {
+      reject(new Error("Failed to get canvas context"));
+      return;
+    }
+
+    img.onload = () => {
+      // Calculate new dimensions while maintaining aspect ratio
+      let { width, height } = img;
+      const maxDim = RESIZE_CONFIG.maxDimension;
+
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+
+      // Set canvas size and draw resized image
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Convert to blob then to File
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error("Failed to create blob from canvas"));
+            return;
+          }
+
+          // Create new filename with .jpg extension
+          const originalName = file.name.replace(/\.[^/.]+$/, "");
+          const newFileName = `${originalName}_resized.jpg`;
+
+          const resizedFile = new File([blob], newFileName, {
+            type: RESIZE_CONFIG.outputType,
+          });
+
+          resolve(resizedFile);
+        },
+        RESIZE_CONFIG.outputType,
+        RESIZE_CONFIG.quality
+      );
+    };
+
+    img.onerror = () => {
+      reject(new Error("Failed to load image"));
+    };
+
+    // Load image from file
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 export function UploadDemo() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [originalFileSize, setOriginalFileSize] = useState<number | null>(null);
+  const [isResizing, setIsResizing] = useState(false);
   const [stepGroups, setStepGroups] = useState<StepGroup[]>(defaultStepGroups);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null);
@@ -57,7 +134,7 @@ export function UploadDemo() {
   }, []);
 
   const handleFileSelect = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
       if (!file) return;
 
@@ -73,7 +150,7 @@ export function UploadDemo() {
         return;
       }
 
-      // Check file size (8MB = 8 * 1024 * 1024 bytes)
+      // Check file size (8MB = 8 * 1024 * 1024 bytes) - for original file
       const maxSizeInBytes = 8 * 1024 * 1024;
       if (file.size > maxSizeInBytes) {
         alert(
@@ -88,8 +165,35 @@ export function UploadDemo() {
         return;
       }
 
-      setSelectedFile(file);
-      updateStepStatus("select", "completed");
+      // Store original size for display
+      setOriginalFileSize(file.size);
+
+      // Reset state before resizing
+      setUploadedFileUrl(null);
+      setUploadedFileName(null);
+      setAiAnalysisResult(null);
+      // Clean up previous image URL
+      if (displayImageUrl) {
+        URL.revokeObjectURL(displayImageUrl);
+        setDisplayImageUrl(null);
+      }
+
+      // Resize the image for faster AI processing
+      setIsResizing(true);
+      try {
+        const resizedFile = await resizeImage(file);
+        setSelectedFile(resizedFile);
+        updateStepStatus("select", "completed");
+      } catch (error) {
+        console.error("Failed to resize image:", error);
+        // Fall back to original file if resize fails
+        setSelectedFile(file);
+        setOriginalFileSize(null); // Don't show compression ratio
+        updateStepStatus("select", "completed");
+      } finally {
+        setIsResizing(false);
+      }
+
       // Reset other steps
       [
         "presign",
@@ -101,14 +205,6 @@ export function UploadDemo() {
         "ai-processing",
         "ai-complete",
       ].forEach((id) => updateStepStatus(id, "pending"));
-      setUploadedFileUrl(null);
-      setUploadedFileName(null);
-      setAiAnalysisResult(null);
-      // Clean up previous image URL
-      if (displayImageUrl) {
-        URL.revokeObjectURL(displayImageUrl);
-        setDisplayImageUrl(null);
-      }
     },
     [updateStepStatus, displayImageUrl]
   );
@@ -377,13 +473,25 @@ export function UploadDemo() {
               onChange={handleFileSelect}
               className="hidden"
               id="file-upload"
-              disabled={isUploading}
+              disabled={isUploading || isResizing}
             />
             <label
               htmlFor="file-upload"
               className="cursor-pointer flex flex-col items-center space-y-4"
             >
-              {selectedFile ? (
+              {isResizing ? (
+                <>
+                  <Loader2 className="w-12 h-12 text-orange-500 animate-spin" />
+                  <div>
+                    <p className="text-lg font-medium text-gray-900">
+                      Compressing image...
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Optimizing for faster AI processing
+                    </p>
+                  </div>
+                </>
+              ) : selectedFile ? (
                 <>
                   <ImageIcon className="w-12 h-12 text-green-500" />
                   <div>
@@ -391,7 +499,14 @@ export function UploadDemo() {
                       {selectedFile.name}
                     </p>
                     <p className="text-sm text-gray-500">
-                      {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                      {selectedFile.size < 1024 * 1024
+                        ? `${(selectedFile.size / 1024).toFixed(0)} KB`
+                        : `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB`}
+                      {originalFileSize && originalFileSize !== selectedFile.size && (
+                        <span className="text-green-600 ml-2">
+                          (compressed from {(originalFileSize / 1024 / 1024).toFixed(1)} MB - {Math.round((1 - selectedFile.size / originalFileSize) * 100)}% smaller)
+                        </span>
+                      )}
                     </p>
                   </div>
                 </>
@@ -414,7 +529,7 @@ export function UploadDemo() {
           {/* Upload Button */}
           <button
             onClick={handleUpload}
-            disabled={!selectedFile || isUploading}
+            disabled={!selectedFile || isUploading || isResizing}
             className="w-full bg-gradient-to-r from-[#F6821F] to-[#FF6633] hover:from-[#FF6633] hover:to-[#F6821F] disabled:from-gray-400 disabled:to-gray-400 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl disabled:shadow-none"
           >
             {isUploading ? (
