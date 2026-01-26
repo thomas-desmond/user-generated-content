@@ -15,21 +15,37 @@ import {
 } from "./ProcessStepGroup";
 import { defaultStepGroups } from "./workflowConfig";
 
-// Configuration for image resizing
+// Configuration for image resizing - must stay under 1MB for Cloudflare Workflows
 const RESIZE_CONFIG = {
-  maxDimension: 1024, // Max width or height in pixels
-  quality: 0.7, // JPEG quality (0-1)
+  maxFileSizeBytes: 900 * 1024, // 900KB target (under 1MB workflow limit)
+  initialMaxDimension: 800, // Start with 800px max dimension
+  minDimension: 200, // Don't go smaller than this
+  initialQuality: 0.7, // Starting JPEG quality
+  minQuality: 0.4, // Don't go below this quality
   outputType: "image/jpeg" as const,
 };
 
 /**
- * Resizes an image file to reduce its size for faster AI processing.
- * Maintains aspect ratio while ensuring the largest dimension is <= maxDimension.
- * Converts to JPEG for smaller file size.
+ * Loads an image file into an HTMLImageElement
  */
-async function resizeImage(file: File): Promise<File> {
+function loadImage(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("Failed to load image"));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+/**
+ * Compresses an image to a specific dimension and quality, returns the blob
+ */
+function compressToBlob(
+  img: HTMLImageElement,
+  maxDimension: number,
+  quality: number
+): Promise<Blob> {
+  return new Promise((resolve, reject) => {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
 
@@ -38,56 +54,80 @@ async function resizeImage(file: File): Promise<File> {
       return;
     }
 
-    img.onload = () => {
-      // Calculate new dimensions while maintaining aspect ratio
-      let { width, height } = img;
-      const maxDim = RESIZE_CONFIG.maxDimension;
+    // Calculate new dimensions while maintaining aspect ratio
+    let { width, height } = img;
 
-      if (width > maxDim || height > maxDim) {
-        if (width > height) {
-          height = Math.round((height * maxDim) / width);
-          width = maxDim;
-        } else {
-          width = Math.round((width * maxDim) / height);
-          height = maxDim;
+    if (width > maxDimension || height > maxDimension) {
+      if (width > height) {
+        height = Math.round((height * maxDimension) / width);
+        width = maxDimension;
+      } else {
+        width = Math.round((width * maxDimension) / height);
+        height = maxDimension;
+      }
+    }
+
+    // Set canvas size and draw resized image
+    canvas.width = width;
+    canvas.height = height;
+    ctx.drawImage(img, 0, 0, width, height);
+
+    // Convert to blob
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(new Error("Failed to create blob from canvas"));
+          return;
         }
+        resolve(blob);
+      },
+      RESIZE_CONFIG.outputType,
+      quality
+    );
+  });
+}
+
+/**
+ * Resizes an image file to ensure it's under 1MB for Cloudflare Workflows.
+ * Uses iterative compression - reduces quality and dimensions until under limit.
+ * Throws an error if the image cannot be compressed small enough.
+ */
+async function resizeImage(file: File): Promise<File> {
+  const img = await loadImage(file);
+
+  let maxDimension = RESIZE_CONFIG.initialMaxDimension;
+  let quality = RESIZE_CONFIG.initialQuality;
+  let blob: Blob | null = null;
+
+  // Iteratively reduce quality and size until under the limit
+  while (maxDimension >= RESIZE_CONFIG.minDimension) {
+    quality = RESIZE_CONFIG.initialQuality;
+
+    while (quality >= RESIZE_CONFIG.minQuality) {
+      blob = await compressToBlob(img, maxDimension, quality);
+
+      if (blob.size <= RESIZE_CONFIG.maxFileSizeBytes) {
+        // Success! Create the file
+        const originalName = file.name.replace(/\.[^/.]+$/, "");
+        const newFileName = `${originalName}_resized.jpg`;
+
+        return new File([blob], newFileName, {
+          type: RESIZE_CONFIG.outputType,
+        });
       }
 
-      // Set canvas size and draw resized image
-      canvas.width = width;
-      canvas.height = height;
-      ctx.drawImage(img, 0, 0, width, height);
+      // Reduce quality and try again
+      quality -= 0.1;
+    }
 
-      // Convert to blob then to File
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) {
-            reject(new Error("Failed to create blob from canvas"));
-            return;
-          }
+    // Reduce dimensions and try again
+    maxDimension -= 100;
+  }
 
-          // Create new filename with .jpg extension
-          const originalName = file.name.replace(/\.[^/.]+$/, "");
-          const newFileName = `${originalName}_resized.jpg`;
-
-          const resizedFile = new File([blob], newFileName, {
-            type: RESIZE_CONFIG.outputType,
-          });
-
-          resolve(resizedFile);
-        },
-        RESIZE_CONFIG.outputType,
-        RESIZE_CONFIG.quality
-      );
-    };
-
-    img.onerror = () => {
-      reject(new Error("Failed to load image"));
-    };
-
-    // Load image from file
-    img.src = URL.createObjectURL(file);
-  });
+  // If we get here, we couldn't compress enough
+  throw new Error(
+    `Unable to compress image under 1MB. Final size: ${blob ? Math.round(blob.size / 1024) : "unknown"}KB`
+  );
 }
 
 export function UploadDemo() {
@@ -178,7 +218,7 @@ export function UploadDemo() {
         setDisplayImageUrl(null);
       }
 
-      // Resize the image for faster AI processing
+      // Resize the image to ensure it's under 1MB for Cloudflare Workflows
       setIsResizing(true);
       try {
         const resizedFile = await resizeImage(file);
@@ -186,10 +226,13 @@ export function UploadDemo() {
         updateStepStatus("select", "completed");
       } catch (error) {
         console.error("Failed to resize image:", error);
-        // Fall back to original file if resize fails
-        setSelectedFile(file);
-        setOriginalFileSize(null); // Don't show compression ratio
-        updateStepStatus("select", "completed");
+        // Show error to user - file cannot be processed
+        alert(
+          "Unable to compress this image to under 1MB (required for processing). Please try a different image or a smaller file."
+        );
+        setSelectedFile(null);
+        setOriginalFileSize(null);
+        event.target.value = "";
       } finally {
         setIsResizing(false);
       }
