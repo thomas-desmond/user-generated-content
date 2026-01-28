@@ -4,6 +4,7 @@ import { UploadDemo } from './components/UploadDemo';
 import { UGCContext } from './components/UGCContext';
 import { CloudflareProductsShowcase } from './components/CloudflareProductsShowcase';
 import { Footer } from './components/Footer';
+import { JoinDemo } from './components/JoinDemo';
 
 export default function Home() {
 	return (
@@ -33,6 +34,7 @@ export default function Home() {
 				<UGCContext />
 			</div>
 			<Footer />
+			<JoinDemo />
 		</div>
 	);
 }
