@@ -4,6 +4,7 @@
  */
 {
   "$schema": "node_modules/wrangler/config-schema.json",
+  "account_id": "d6850012d250c1600028b55d1d879b16",
   "name": "user-generated-content",
   "main": ".open-next/worker.js",
   "compatibility_date": "2025-03-01",

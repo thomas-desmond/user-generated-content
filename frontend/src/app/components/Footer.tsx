@@ -27,7 +27,7 @@ export function Footer() {
               <span>Give Feedback</span>
             </a>
             <a
-              href="https://github.com/thomas-desmond/user-generated-content" // Replace with your actual GitHub repo URL
+              href="https://github.com/thomas-desmond/user-generated-content"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors duration-200"
